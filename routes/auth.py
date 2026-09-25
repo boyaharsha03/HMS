@@ -26,7 +26,7 @@ def login():
         ):
             flash("This doctor account is inactive.", "danger")
         else:
-            if user["role"] in {"patient", "doctor"}:
+            if user["role"] in {"patient", "doctor", "admin"}:
                 session.clear()
                 session["pending_login"] = {"user_id": user["id"], "name": user["name"], "email": user["email"], "role": user["role"]}
                 try:
@@ -56,7 +56,7 @@ def verify_login_otp():
         if valid:
             session.clear()
             session.update(user_id=pending["user_id"], name=pending["name"], role=pending["role"], email=pending["email"])
-            target = {"patient": "patient.dashboard", "doctor": "doctor.dashboard"}
+            target = {"patient": "patient.dashboard", "doctor": "doctor.dashboard", "admin": "admin.dashboard"}
             return redirect(url_for(target[pending["role"]]))
         flash(message, "danger")
     return render_template("verify_login_otp.html", email=pending["email"])
@@ -83,7 +83,7 @@ def resend_login_otp():
 def forgot_password():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
-        user = fetch_one("SELECT * FROM users WHERE email = %s AND role IN ('patient', 'doctor')", (email,))
+        user = fetch_one("SELECT * FROM users WHERE email = %s AND role IN ('patient', 'doctor', 'admin')", (email,))
         if user and user["email_verified"] and user["status"] == "Active":
             session["pending_password_reset"] = {"user_id": user["id"], "email": user["email"], "name": user["name"]}
             try:

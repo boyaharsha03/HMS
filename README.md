@@ -90,7 +90,7 @@ A patient submits registration details. Flask validates the fields, generates a 
 
 For local development without SMTP, configure a test SMTP provider such as Mailtrap. The application intentionally does not use a fixed development OTP.
 
-Patient and doctor accounts receive a fresh email OTP on every login after the password is accepted. Administrators use direct password login. The Forgot password link sends a separate reset OTP and allows the patient or doctor to set a new password. Admins can remove doctor access by deactivating a doctor; this preserves the doctor's appointment history and can be reversed with Restore access.
+Patient, doctor, and administrator accounts receive a fresh email OTP on every login after the password is accepted. The Forgot password link sends a separate reset OTP and allows any active, verified account to set a new password. Admins can remove doctor access by deactivating a doctor; this preserves the doctor's appointment history and can be reversed with Restore access.
 
 ## Appointment workflow
 
