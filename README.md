@@ -130,6 +130,8 @@ A configured MySQL server and SMTP provider are required for end-to-end workflow
 
 Use a production WSGI server such as Waitress or Gunicorn behind HTTPS, set a strong random `SECRET_KEY`, use a dedicated MySQL user with least-privilege access, store environment variables in the hosting platform's secret manager, disable Flask debug mode, and configure SMTP with an application password. Add CSRF protection and a reverse-proxy rate limiter before exposing write routes to the public internet.
 
+For Render, use `gunicorn app:app` as the Start Command. The `app` module exposes the Flask application as `app`, and Gunicorn is included in `requirements.txt`.
+
 For a Windows demonstration deployment, install Waitress and run:
 
 ```powershell
