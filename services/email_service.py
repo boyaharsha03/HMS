@@ -1,54 +1,30 @@
-import os
-import resend
+import smtplib
+from email.message import EmailMessage
+
 from flask import current_app
 
 
 def send_otp_email(recipient, name, code):
-    api_key = os.getenv("RESEND_API_KEY")
+    if not current_app.config["MAIL_USERNAME"] or not current_app.config["MAIL_PASSWORD"]:
+        raise RuntimeError("SMTP username and password are not configured")
 
-    if not api_key:
-        raise RuntimeError("RESEND_API_KEY is not configured")
-
-    resend.api_key = api_key
-
-    expiry_minutes = current_app.config.get("OTP_EXPIRY_MINUTES", 10)
-
-    params = {
-        "from": "Hospital Management System <onboarding@resend.dev>",
-        "to": [recipient],
-        "subject": "Hospital Management System - Email Verification OTP",
-        "html": f"""
-        <html>
-        <body>
-            <p>Hello {name},</p>
-
-            <p>Your verification OTP is:</p>
-
-            <h2>{code}</h2>
-
-            <p>
-                This OTP is valid for {expiry_minutes} minutes.
-            </p>
-
-            <p>
-                If you did not request this OTP, please ignore this email.
-            </p>
-
-            <p>
-                Regards,<br>
-                Hospital Management System
-            </p>
-        </body>
-        </html>
-        """
-    }
-
+    message = EmailMessage()
+    message["Subject"] = "Hospital Management System - Email Verification OTP"
+    message["From"] = current_app.config["MAIL_USERNAME"]
+    message["To"] = recipient
+    message.set_content(
+        f"Hello {name},\n\nYour verification OTP is: {code}\n\n"
+        f"This OTP is valid for {current_app.config['OTP_EXPIRY_MINUTES']} minutes.\n\n"
+        "If you did not request this OTP, please ignore this email.\n\n"
+        "Regards,\nHospital Management System"
+    )
     try:
-        resend.Emails.send(params)
-    except Exception as error:
-        current_app.logger.exception(
-            "Resend email delivery failed: %s", error
-        )
-        raise RuntimeError(
-            "Email delivery failed. Please check the Resend configuration."
-        ) from error
+        with smtplib.SMTP(current_app.config["MAIL_SERVER"], current_app.config["MAIL_PORT"]) as smtp:
+            if current_app.config["MAIL_USE_TLS"]:
+                smtp.starttls()
+            smtp.login(current_app.config["MAIL_USERNAME"], current_app.config["MAIL_PASSWORD"])
+            smtp.send_message(message)
+    except (OSError, smtplib.SMTPException) as error:
+        current_app.logger.exception("SMTP delivery failed: %s", error)
+        raise RuntimeError("SMTP delivery failed. Check your mail settings and app password.") from error
+
