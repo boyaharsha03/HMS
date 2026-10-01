@@ -5,8 +5,16 @@ from flask import current_app
 
 
 def send_otp_email(recipient, name, code):
-    if not current_app.config["MAIL_USERNAME"] or not current_app.config["MAIL_PASSWORD"]:
-        raise RuntimeError("SMTP username and password are not configured")
+    username = str(current_app.config.get("MAIL_USERNAME", "")).strip()
+    password = str(current_app.config.get("MAIL_PASSWORD", "")).strip()
+    if (
+        not username
+        or not password
+        or username.lower().startswith("your_")
+        or password.lower().startswith("your_")
+        or "gmail_app_password" in password.lower()
+    ):
+        raise RuntimeError("SMTP username and password are not configured for a real mail account.")
 
     message = EmailMessage()
     message["Subject"] = "Hospital Management System - Email Verification OTP"

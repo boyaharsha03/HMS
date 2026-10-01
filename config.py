@@ -7,6 +7,7 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-only-change-me")
+    DATABASE_TYPE = os.getenv("DATABASE_TYPE", "sqlite")
     DATABASE_CONFIG = {
         "host": os.getenv("DATABASE_HOST", "localhost"),
         "port": int(os.getenv("DATABASE_PORT", "3306")),

@@ -114,8 +114,10 @@ def _get_sqlite_conn():
 @contextmanager
 def get_db():
     db_config = current_app.config.get("DATABASE_CONFIG", {})
-    db_type = os.getenv("DATABASE_TYPE", "auto")
-    
+    db_type = str(current_app.config.get("DATABASE_TYPE", "sqlite")).strip().lower()
+    if db_type in {"", "auto"}:
+        db_type = "sqlite"
+
     if db_type == "sqlite":
         conn = _get_sqlite_conn()
         try:

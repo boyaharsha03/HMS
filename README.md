@@ -1,55 +1,98 @@
 # CarePoint Hospital Management System
 
-A deployment-ready Flask and MySQL hospital management system for patient registration, secure email OTP verification, doctor availability, online appointment booking, and role-based hospital administration.
+CarePoint is a production-ready Flask-based hospital management platform designed for clinics and small hospitals. It supports patient onboarding, secure OTP-based authentication, appointment scheduling, doctor management, and role-based administrative workflows.
 
-## Features
+## Overview
 
-- Patient registration with six-digit SMTP email OTP, five-minute expiry, hashed session storage, and resend throttling.
-- Werkzeug password hashing, Flask sessions, protected routes, and patient/doctor/admin authorization.
-- Patient and doctor login OTP on every login, plus email OTP password recovery.
-- Doctor directory with search, profiles, departments, availability, and consultation details.
-- Appointment booking with backend date, doctor availability, and active-slot conflict validation.
-- Patient appointment history and cancellation.
-- Doctor appointment acceptance, rejection, completion, patient details, and availability management.
-- Admin dashboard statistics, doctor activation, patient directory, department management, appointment status management, and availability overview.
-- Responsive Bootstrap 5 interface with no frontend-only placeholder workflows.
+This application helps manage:
 
-## Technology
+- Patient registration and verification
+- Doctor and admin authentication
+- Appointment booking and status tracking
+- Doctor availability management
+- Hospital administration and reporting
+- Secure email-based OTP flows for login and password recovery
 
-Python 3.10+, Flask 3, MySQL 8+, Bootstrap 5, JavaScript, SMTP, Werkzeug, and `mysql-connector-python`.
+## Key Features
+
+- Patient registration with six-digit email OTP verification
+- Password reset via secure email-based OTP flow
+- Login OTP for patients, doctors, and administrators
+- Role-based access control for patients, doctors, and admins
+- Doctor profile, department, and availability management
+- Appointment booking with conflict validation
+- Patient appointment history and cancellation
+- Doctor-side acceptance, rejection, and completion of appointments
+- Admin dashboard for user and department oversight
+- Responsive Bootstrap-powered UI
+
+## Tech Stack
+
+- Python 3.10+
+- Flask 3
+- MySQL 8+
+- mysql-connector-python
+- Bootstrap 5
+- JavaScript
+- SMTP email integration
+- Werkzeug password hashing
 
 ## System Requirements
 
-Install Python 3.10 or newer, MySQL Server 8 or newer, and a Gmail account with an App Password (or another SMTP provider). Gmail accounts must have two-factor authentication enabled before creating an App Password.
+Before running the app, make sure you have:
 
-## Installation
+- Python 3.10 or newer
+- MySQL Server 8 or newer
+- A working SMTP provider such as Gmail with App Password support
+- A valid `.env` configuration file
 
-### Windows PowerShell
+> If you use Gmail, enable two-factor authentication before generating an App Password.
+
+## Quick Start
+
+### 1. Create and activate a virtual environment
+
+#### Windows PowerShell
 
 ```powershell
-cd C:\Users\boyah\OneDrive\Desktop\HMS
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+```
+
+If PowerShell blocks activation, allow scripts for the current user, then activate:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+.\.venv\Scripts\Activate.ps1
+```
+
+#### macOS/Linux
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+When activated, your terminal prompt usually shows `(.venv)`. Run the following setup commands in that same activated terminal.
+
+### 2. Install dependencies
+
+```bash
 pip install -r requirements.txt
+```
+
+### 3. Set up environment variables
+
+Copy the sample environment file:
+
+```bash
 Copy-Item .env.example .env
 ```
 
-### MySQL setup
-
-Start MySQL, then run the schema from a MySQL client:
-
-```powershell
-mysql -u root -p < database\schema.sql
-```
-
-Or open `database/schema.sql` in MySQL Workbench and execute it. The script creates the `hospital_management` database, tables, foreign keys, indexes, constraints, and sample departments. It does not insert demo users, patients, doctors, appointments, or availability records.
-
-### Environment configuration
-
-Edit `.env` and provide:
+Then update `.env` with your actual values:
 
 ```dotenv
-SECRET_KEY=use-a-long-random-value
+SECRET_KEY=your-very-secure-secret-key
 DATABASE_HOST=localhost
 DATABASE_PORT=3306
 DATABASE_USER=root
@@ -64,39 +107,84 @@ OTP_EXPIRY_MINUTES=5
 OTP_RESEND_SECONDS=60
 ```
 
-Never commit `.env`. SMTP credentials belong only in environment variables.
+Do not commit `.env` to version control.
 
-### Create the first administrator
+### 4. Create the database schema
 
-After the schema is loaded and `.env` is configured:
+Run the SQL schema in MySQL:
+
+```powershell
+mysql -u root -p < database\schema.sql
+```
+
+You can also import the file in MySQL Workbench manually. The schema creates the `hospital_management` database and the required tables, indexes, constraints, and sample hospital departments.
+
+### 5. Create the first administrator
 
 ```powershell
 python seed_admin.py
 ```
 
-Choose an email and password of at least eight characters. Doctors and patients can then be added through the application. The temporary password entered during doctor creation must be shared securely.
+Follow the prompts to create the initial admin account. This account is used to create doctors, manage departments, and configure hospital settings.
 
-### Run the application
+### 6. Run the application
 
 ```powershell
 python app.py
 ```
 
-Open http://127.0.0.1:5000 in a browser.
+Then open the app in your browser:
 
-## OTP workflow
+```text
+http://127.0.0.1:5000
+```
 
-A patient submits registration details. Flask validates the fields, generates a cryptographically random six-digit OTP, stores only its SHA-256 digest and expiry in the signed session, and sends the code through SMTP. The verification route checks email binding, expiry, and constant-time digest equality, then removes the OTP before creating the verified patient account. Resend requests are limited by `OTP_RESEND_SECONDS`.
+## Authentication and Security Flow
 
-For local development without SMTP, configure a test SMTP provider such as Mailtrap. The application intentionally does not use a fixed development OTP.
+The application uses secure, role-based authentication patterns:
 
-Patient, doctor, and administrator accounts receive a fresh email OTP on every login after the password is accepted. The Forgot password link sends a separate reset OTP and allows any active, verified account to set a new password. Admins can remove doctor access by deactivating a doctor; this preserves the doctor's appointment history and can be reversed with Restore access.
+- Passwords are stored with Werkzeug hashing
+- OTP values are generated using cryptographically secure random values
+- OTP hashes are stored in session data rather than in plaintext
+- Expiry and resend throttling are enforced for OTP operations
+- Route access is restricted according to user type
 
-## Appointment workflow
+### OTP workflow
 
-A patient logs in, selects a doctor, opens the booking form, selects a future date and time, and submits a reason. The server verifies that the requested day/time matches an active doctor availability record and that no non-cancelled/non-rejected appointment already occupies the slot. The appointment begins as `Pending`. Doctors can accept or reject it, then mark accepted visits as completed. Patients can cancel pending or accepted visits.
+A patient submits registration details. The server validates the input, generates a six-digit OTP, stores only the hashed value and expiry time in the session, and sends the OTP via email. After verification, the account is activated and the OTP is cleared.
 
-## Project structure
+The same pattern is used for:
+
+- Patient login
+- Doctor login
+- Admin login
+- Password reset
+
+## Appointment Workflow
+
+Patients can:
+
+- Browse doctors
+- View doctor availability
+- Book an appointment for a valid date and time
+- View appointment history
+- Cancel active bookings
+
+Doctors can:
+
+- Review pending appointments
+- Accept or reject requests
+- Mark completed visits
+- Manage availability
+
+Admins can:
+
+- Activate or deactivate doctors
+- Review department records
+- Manage appointment flow
+- Monitor hospital records and activity
+
+## Project Structure
 
 ```text
 HMS/
@@ -106,35 +194,65 @@ HMS/
 ├── seed_admin.py
 ├── requirements.txt
 ├── .env.example
-├── database/schema.sql
-├── routes/main.py auth.py patient.py doctor.py admin.py
-├── services/otp_service.py email_service.py
-├── utils/decorators.py validators.py
+├── .gitignore
+├── database/
+│   └── schema.sql
+├── routes/
+│   ├── admin.py
+│   ├── auth.py
+│   ├── doctor.py
+│   ├── main.py
+│   └── patient.py
+├── services/
+│   ├── email_service.py
+│   └── otp_service.py
+├── static/
+│   ├── css/
+│   └── js/
 ├── templates/
-└── static/css/style.css static/js/script.js
+├── utils/
+│   ├── decorators.py
+│   └── validators.py
+└── README.md
 ```
 
-## Testing checklist
+## Deployment Notes
 
-1. Register with valid details and confirm the OTP email.
-2. Try duplicate email, invalid email, mismatched passwords, incorrect OTP, expired OTP, and resend throttling.
-3. Log in with valid and invalid passwords; verify unverified users are blocked; log out.
-4. Create a doctor and availability slot as admin.
-5. Book a matching patient appointment, then try the same active slot again.
-6. Cancel as patient; accept, reject, and complete as doctor.
-7. Confirm patients cannot open doctor/admin routes and doctors cannot open admin routes.
+For production deployment:
 
-A configured MySQL server and SMTP provider are required for end-to-end workflow tests. Python compilation and route registration can be checked without either service.
+- Use a strong random `SECRET_KEY`
+- Run the app behind HTTPS
+- Use a dedicated MySQL user with least-privilege permissions
+- Keep environment variables in your hosting platform's secret manager
+- Disable Flask debug mode
+- Use a production WSGI server such as Gunicorn or Waitress
 
-## Deployment
+### Gunicorn example
 
-Use a production WSGI server such as Waitress or Gunicorn behind HTTPS, set a strong random `SECRET_KEY`, use a dedicated MySQL user with least-privilege access, store environment variables in the hosting platform's secret manager, disable Flask debug mode, and configure SMTP with an application password. Add CSRF protection and a reverse-proxy rate limiter before exposing write routes to the public internet.
+```bash
+gunicorn app:app
+```
 
-For Render, use `gunicorn app:app` as the Start Command. The `app` module exposes the Flask application as `app`, and Gunicorn is included in `requirements.txt`.
-
-For a Windows demonstration deployment, install Waitress and run:
+### Waitress example
 
 ```powershell
 pip install waitress
 waitress-serve --listen=127.0.0.1:8000 app:app
 ```
+
+## Recommended Validation Checklist
+
+Before releasing or testing the app, verify:
+
+1. User registration works with valid email OTP verification
+2. Duplicate emails are rejected
+3. Invalid OTP values and expired OTPs are handled properly
+4. Password resets work for verified accounts
+5. Doctor availability is enforced during appointment booking
+6. Appointment conflict rules block duplicate bookings
+7. Patient, doctor, and admin route permissions work as expected
+8. Admin account creation succeeds and the dashboard loads correctly
+
+## License
+
+This project is intended for educational and hospital-management use cases. Review your local licensing and compliance requirements before production deployment.
