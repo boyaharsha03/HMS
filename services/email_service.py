@@ -18,7 +18,7 @@ def send_otp_email(recipient, name, code):
 
     message = EmailMessage()
     message["Subject"] = "Hospital Management System - Email Verification OTP"
-    message["From"] = current_app.config["MAIL_USERNAME"]
+    message["From"] = "carepoint.hms@gmail.com"
     message["To"] = recipient
     message.set_content(
         f"Hello {name},\n\nYour verification OTP is: {code}\n\n"
